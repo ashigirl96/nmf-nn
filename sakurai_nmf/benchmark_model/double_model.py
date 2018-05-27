@@ -36,6 +36,27 @@ def build_tf_model():
                                  )
 
 
+def build_tf_cross_entropy_model(batch_size, shape=784, use_bias=False, activation=None, use_softmax=False):
+    inputs = tf.placeholder(tf.float64, (batch_size, shape), name='inputs')
+    labels = tf.placeholder(tf.float64, (batch_size, 10), name='labels')
+    
+    x = tf.layers.dense(inputs, 1000, activation=activation, use_bias=use_bias)
+    x = tf.layers.dense(x, 500, activation=activation, use_bias=use_bias)
+    outputs = tf.layers.dense(x, 10, activation=None, use_bias=use_bias)
+    
+    losses = tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=outputs)
+    cross_entropy = tf.reduce_mean(losses)
+    
+    correct_prediction = tf.equal(tf.argmax(labels, 1), tf.argmax(outputs, 1))
+    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32)) * 100.
+    
+    return agents.tools.AttrDict(inputs=inputs,
+                                 outputs=outputs,
+                                 labels=labels,
+                                 cross_entropy=cross_entropy,
+                                 accuracy=accuracy,
+                                 )
+
 def build_tf_one_hot_model(batch_size, shape=784, use_bias=False, activation=None, use_softmax=False):
     inputs = tf.placeholder(tf.float64, (batch_size, shape), name='inputs')
     labels = tf.placeholder(tf.float64, (batch_size, 10), name='labels')

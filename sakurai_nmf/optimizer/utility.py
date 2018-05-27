@@ -73,7 +73,7 @@ def get_op_name(x):
 
 def _get_activation(op, graph=None):
     graph = graph or tf.get_default_graph()
-    activations = ['Relu']
+    activations = ['Relu', 'Softmax']
     _activation = None
     for activation in activations:
         try:

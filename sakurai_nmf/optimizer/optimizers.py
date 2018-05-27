@@ -45,7 +45,7 @@ class NMFOptimizer(object):
         autoencoder_losses = tf.losses.mean_squared_error(
             labels=self.inputs, predictions=self.decoder)
         self.autoencoder_loss = tf.reduce_mean(autoencoder_losses)
-
+        
         self.autoencoder_train_op = tf.train.AdamOptimizer().minimize(self.autoencoder_loss)
     
     def minimize(self, loss=None):
@@ -79,7 +79,7 @@ class NMFOptimizer(object):
                                    first_nneg=True,
                                    )
             # Use activation (ReLU)
-            else:
+            elif utility.get_op_name(layer.activation) == 'Relu':
                 u, v = mf.nonlin_semi_nmf(a=a, u=u, v=v,
                                           use_tf=True,
                                           use_bias=layer.use_bias,
@@ -87,6 +87,13 @@ class NMFOptimizer(object):
                                           num_calc_u=1,
                                           first_nneg=True,
                                           )
+            # Use Softmax
+            elif utility.get_op_name(layer.activation) == 'Softmax':
+                print('used softmax!!')
+                u, v = mf.softmax_nmf(a=a, u=u, v=v,
+                                      use_tf=True,
+                                      use_bias=layer.use_bias,
+                                      )
             if layer.use_bias:
                 v, bias = utility.split_v_bias(v)
                 updates.append(layer.bias.assign(bias))

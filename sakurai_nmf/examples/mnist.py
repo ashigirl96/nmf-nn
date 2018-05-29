@@ -8,6 +8,7 @@ import functools
 import numpy as np
 import tensorflow as tf
 from agents.tools import AttrDict
+import time
 
 from sakurai_nmf import benchmark_model
 from sakurai_nmf.optimizer import NMFOptimizer
@@ -38,12 +39,15 @@ def train_and_test(train_op, num_iters, sess, model, x_train, y_train, x_test, y
                    output_debug=False):
     for i in range(num_iters):
         # Train...
+        start_time = time.time()
         x, y = benchmark_model.batch(x_train, y_train, batch_size=batch_size)
         _, = sess.run([train_op], feed_dict={
             model.inputs: x,
             model.labels: y,
         })
-        train_loss, train_acc = sess.run([model.cross_entropy, model.accuracy], feed_dict={
+        duration = time.time() - start_time
+        
+        train_loss, train_acc = sess.run([model.frob_norm, model.accuracy], feed_dict={
             model.inputs: x,
             model.labels: y,
         })
@@ -57,15 +61,15 @@ def train_and_test(train_op, num_iters, sess, model, x_train, y_train, x_test, y
         # Compute test accuracy.
         for _ in range(5):
             x, y = benchmark_model.batch(x_test, y_test, batch_size=batch_size)
-            stats.append(sess.run([model.cross_entropy, model.accuracy], feed_dict={
+            stats.append(sess.run([model.frob_norm, model.accuracy], feed_dict={
                 model.inputs: x,
                 model.labels: y,
             }))
         test_loss, test_acc = np.mean(stats, axis=0)
-        
-        print('\r({}/{}) [Train]loss {:.3f}, accuracy {:.3f} [Test]loss {:.3f}, accuracy {:.3f}'.format(
+
+        print('\r({}/{}) [Train]loss {:.3f}, accuracy {:.3f} time, {:.3f} [Test]loss {:.3f}, accuracy {:.3f}'.format(
             i + 1, num_iters,
-            train_loss, train_acc, test_loss, test_acc), end='', flush=True)
+            train_loss, train_acc, duration, test_loss, test_acc), end='', flush=True)
     print()
 
 

@@ -11,6 +11,7 @@ import tensorflow as tf
 from keras.layers import Dense, Input, SimpleRNN
 from keras.models import Model
 from keras.utils.np_utils import to_categorical
+from tensorflow.contrib.rnn import GRUBlockCellV2
 
 from sakurai_nmf.losses import frobenius_norm
 from sakurai_nmf.optimizer import utility
@@ -75,6 +76,50 @@ def build_rnn_mnist(batch_size, use_bias=False, activation=None):
                                  )
 
 
+def build_tf_rnn_mnist(batch_size, use_bias=False, activation=None):
+    # sequence_length = tf.32  # Timesteps
+    # length = tf.placeholder(tf.int32, None)
+    def length(sequence):
+        used = tf.sign(tf.reduce_max(tf.abs(sequence), 2))
+        length = tf.reduce_sum(used, 1)
+        length = tf.cast(length, tf.int32)
+        return length
+
+    max_length = 100
+    frame_size = 64
+    num_hidden = 200
+
+    sequence = tf.placeholder(
+        tf.float32, [None, max_length, frame_size])
+    output, state = tf.nn.dynamic_rnn(
+        tf.contrib.rnn.GRUCell(num_hidden),
+        sequence,
+        dtype=tf.float32,
+        sequence_length=length(sequence),
+    )
+    print(length(sequence))
+
+
+def test_sequence_length():
+    # Create input data
+    X = np.random.randn(2, 10, 8)
+
+    # The second example is of length 6
+    X_lengths = [100, 60]
+
+    cell = tf.nn.rnn_cell.GRUCell(num_units=64)
+    print(cell)
+
+    outputs, last_states = tf.nn.dynamic_rnn(
+        cell=cell,
+        dtype=tf.float64,
+        # sequence_length=X_lengths,
+        inputs=X)
+    print(outputs)
+    print(last_states)
+
+
+
 def build_keras_rnn_mnist(batch_size, use_bias=False, activation=None):
     time_steps = 28
     num_features = 28
@@ -121,10 +166,10 @@ def _train():
         init.run()
         for epoch in range(epoch_size):
             for _ in range(len(x_train) // batch_size):
-            # for _ in range(1):
+                # for _ in range(1):
                 x, y = batch(x_train, y_train, batch_size)
                 _, = sess.run([train_op],
-                                     feed_dict={model.inputs: x, model.labels: y})
+                              feed_dict={model.inputs: x, model.labels: y})
             x, y = batch(x_test, y_test, batch_size)
             loss, acc = sess.run([model.cross_entropy, model.accuracy],
                                  feed_dict={model.inputs: x, model.labels: y})
@@ -199,7 +244,9 @@ def cell_unit_rnn():
 
 def main(_):
     # cell_unit_rnn()
-    _train()
+    # _train()
+    # build_tf_rnn_mnist(100)
+    test_sequence_length()
 
 
 if __name__ == '__main__':

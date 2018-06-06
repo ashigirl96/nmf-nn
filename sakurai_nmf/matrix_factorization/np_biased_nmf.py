@@ -158,6 +158,7 @@ def _nonlin_solve(a, b, x, _lambda=1e-2, rcond=1e-14, eps=1e-15, num_iters=1, so
             vsu = u_svd.v @ su_solve
             _x = _eye + _lambda * vsu
             x = np.linalg.solve(_x, x)
+            x = utility.relu(x)
             bias_x = np.vstack((x, bias.T))
         return x
     

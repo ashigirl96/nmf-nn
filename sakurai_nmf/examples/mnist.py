@@ -74,6 +74,7 @@ def train_and_test(train_op, num_iters, sess, model, x_train, y_train, x_test, y
 
 
 def main(_):
+    print('use_bias', FLAGS.use_bias)
     # Set configuration
     config = AttrDict(default_config())
     # Build one hot mnist model.
@@ -122,6 +123,5 @@ if __name__ == '__main__':
     tf.app.flags.DEFINE_integer('num_bp_iters', 5, '''Number of back propagation(adam) iterations''')
     tf.app.flags.DEFINE_float('lr', 0.001, '''learning rate for back propagation''')
     tf.app.flags.DEFINE_boolean('use_relu', False, '''Use ReLU''')
-    tf.app.flags.DEFINE_boolean('use_bias', True, '''Use bias''')
-    
+    tf.app.flags.DEFINE_boolean('use_bias', False, '''Use bias''')
     tf.app.run()

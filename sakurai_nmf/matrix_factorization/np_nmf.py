@@ -137,6 +137,7 @@ def _nonlin_solve(a, b, x, rcond=1e-14, num_iters=1, solve_ax=True):
             ur = u.T @ r
             solve = np.linalg.solve(s, ur)
             x = x + _omega * (v @ solve)
+            x = utility.relu(x)
         return x
     
     def _solve_xa(x):

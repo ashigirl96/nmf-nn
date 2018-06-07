@@ -5,6 +5,7 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+from agents.tools import AttrDict
 
 import sakurai_nmf.matrix_factorization as mf
 from . import utility
@@ -20,11 +21,11 @@ class NMFOptimizer(object):
             model: Neural network model.
         """
         
-        self._config = config
-        if self._config:
-            self._use_autoencoder = config.use_autoencoder or False
-        else:
-            self._use_autoencoder = False
+        # self._config = config
+        # if self._config:
+        #     self._use_autoencoder = config.use_autoencoder or False
+        # else:
+        #     self._use_autoencoder = False
         self._graph = graph
     
     def _init(self, loss):
@@ -34,21 +35,55 @@ class NMFOptimizer(object):
                                           loss=loss,
                                           ops=self._ops,
                                           graph=self._graph)
-        # self._layers = utility.zip_layer(inputs=self.inputs,
-        #                                   ops=self._ops,
-        #                                   graph=self._graph)
     
     def _autoencoder(self):
-        inputs_size = self._layers[0].output.shape[1]
-        output = self._layers[-1].output
-        self.decoder = tf.layers.Dense(inputs_size)(output)
-        autoencoder_losses = tf.losses.mean_squared_error(
-            labels=self.inputs, predictions=self.decoder)
-        self.autoencoder_loss = tf.reduce_mean(autoencoder_losses)
         
-        self.autoencoder_train_op = tf.train.AdamOptimizer().minimize(self.autoencoder_loss)
+        updates = []
+        layers = self._layers[:-1]
+        for i, layer in enumerate(layers):
+            a = layer.output  # [3000, 784]
+            u = self._layers[i + 1].output
+            kernel = layer.kernel
+            temporary_shape = utility.transpose_shape(kernel)  # [1000, 784]
+            if layer.use_bias:
+                temporary_shape[0] += 1
+                kernel = tf.concat((kernel, layer.bias[None, ...]), axis=0)
+            temporary_kernel = tf.get_variable('temporal_{}'.format(i),
+                                               temporary_shape, dtype=tf.float64,
+                                               initializer=tf.contrib.layers.xavier_initializer(),
+                                               trainable=False)
+            u, _ = mf.semi_nmf(a=a, u=u, v=temporary_kernel,
+                               use_tf=True,
+                               use_bias=layer.use_bias,
+                               num_iters=1,
+                               first_nneg=True,
+                               )
+
+            # Not use activation (ReLU)
+            if not layer.activation:
+                _, v = mf.semi_nmf(a=u, u=a, v=kernel,
+                                   use_tf=True,
+                                   use_bias=layer.use_bias,
+                                   num_iters=1,
+                                   first_nneg=True,
+                                   )
+            # Use activation (ReLU)
+            # else utility.get_op_name(layer.activation) == 'Relu':
+            else:
+                _, v = mf.nonlin_semi_nmf(a=u, u=a, v=kernel,
+                                          use_tf=True,
+                                          use_bias=layer.use_bias,
+                                          num_calc_v=0,
+                                          num_calc_u=1,
+                                          first_nneg=True,
+                                          )
+            if layer.use_bias:
+                v, bias = utility.split_v_bias(v)
+                updates.append(layer.bias.assign(bias))
+            updates.append(layer.kernel.assign(v))
+        return tf.group(*updates)
     
-    def minimize(self, loss=None):
+    def minimize(self, loss=None, pretrain=False):
         """Construct the control dependencies for calculating neural net optimized.
         
         Returns:
@@ -56,9 +91,8 @@ class NMFOptimizer(object):
             The import
         """
         self._init(loss)
-        
-        if self._use_autoencoder:
-            self._autoencoder()
+        # pre-train with auto encoder.
+        pretrain_op = self._autoencoder() if pretrain else tf.no_op()
         
         a = self.labels
         updates = []
@@ -100,4 +134,4 @@ class NMFOptimizer(object):
             updates.append(layer.kernel.assign(v))
             a = tf.identity(u)
         
-        return tf.group(*updates)
+        return AttrDict(ae=pretrain_op, nmf=tf.group(*updates))

@@ -18,6 +18,13 @@ def get_train_ops(graph=None):
     return vars_
 
 
+def transpose_shape(tensor: tf.Tensor):
+    shape = tensor.shape.as_list()
+    if len(shape) != 2:
+        assert ValueError('Other dimension tensor never implemented')
+    return [shape[1], shape[0]]
+
+
 def get_placeholder_ops(loss: tf.Operation):
     # WARNING no guarantee to get 2 placeholder
     """Collect placeholder from loss.
@@ -84,6 +91,25 @@ def _get_activation(op, graph=None):
         if _activation:
             return _activation
     return _activation
+
+
+def combine_one_bias(tensor: tf.Tensor, axis=0):
+    # For example uncombined matrix (3000, 784)
+    # will be (3000, 785)
+    if isinstance(tensor, tf.Tensor):
+        if axis == 0:
+            size = tensor.shape.as_list()[1]
+            ones = tf.ones((1, size), dtype=tf.float64)
+            tensor = tf.identity(
+                tf.concat((tensor, ones), axis=0))
+            return tensor
+        else:
+            size = tensor.shape.as_list()[0]
+            ones = tf.ones((size, 1), dtype=tf.float64)
+            tensor = tf.identity(
+                tf.concat((tensor, ones), axis=1))
+            return tensor
+    raise NotImplementedError('Not support type {}'.format(type(v)))
 
 
 def split_v_bias(v: tf.Tensor):

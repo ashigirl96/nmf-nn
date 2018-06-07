@@ -97,6 +97,7 @@ class TestTfFormatMatrixFactorization(tf.test.TestCase):
         old_loss = np_frobenius_norm(a, u @ v)
         
         bias_v = np.vstack((v, np.ones((1, v.shape[1]))))
+        assert bias_v.shape == (301, 100) and u.shape == (100, 300)
         start_time = time.time()
         
         u, bias_v = semi_nmf(a, u, bias_v, use_bias=True)

@@ -157,7 +157,8 @@ def _nonlin_solve(a, b, x, rcond=1e-14, num_iters=1, solve_ax=True):
         return _solve_xa(x)
 
 
-def nonlin_semi_nmf(a, u, v, rcond=1e-14, eps=1e-15, num_iters=1, num_calc_u=1, num_calc_v=1, first_nneg=True):
+def nonlin_semi_nmf(a, u, v, rcond=1e-14, eps=1e-15, num_iters=1, num_calc_u=1, num_calc_v=1,
+                    first_nneg=True, batch_first=True):
     """Nonlinear semi-NMF
     
     Args:
@@ -167,10 +168,14 @@ def nonlin_semi_nmf(a, u, v, rcond=1e-14, eps=1e-15, num_iters=1, num_calc_u=1, 
         rcond: Reciprocal condition number
         num_iters: Number of iterations
         first_nneg: Compute Non-negative matrix first
+        batch_first: Solve a = uv like TensorFlow format
 
     Returns:
         Solved u, v
     """
+    if batch_first:
+        num_calc_u, num_calc_v = num_calc_v, num_calc_u
+    
     for _ in range(num_iters):
         if first_nneg:
             # In batch first, v has negative elements.

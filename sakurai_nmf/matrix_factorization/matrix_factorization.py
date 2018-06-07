@@ -11,11 +11,21 @@ import tensorflow as tf
 BATCH_FIRST = True
 
 
+def _check_shape(a, u, v, use_bias):
+    a_shape = a.shape
+    u_shape = u.shape
+    v_shape = v.shape
+    
+    return (a_shape[0] == u_shape[0]) or \
+           (a_shape[1] == v_shape[1]) or \
+           (u_shape[1] == v_shape[0] + int(use_bias))
+
+
 def semi_nmf(a, u, v,
              use_bias=False,
              use_tf=False,
              data_format=BATCH_FIRST,
-             first_nneg=False,
+             first_nneg=True,
              num_iters=1,
              rcond=1e-14,
              eps=1e-15,
@@ -43,6 +53,7 @@ def semi_nmf(a, u, v,
         When use TensorFlow, it returns operation u and v solved.
         When use NumPy, it returns results of u and v.
     """
+    assert _check_shape(a, u, v, use_bias)
     
     if use_bias:
         from .np_biased_nmf import semi_nmf as semi_nmf_
@@ -104,7 +115,7 @@ def nonlin_semi_nmf(a, u, v,
                     use_bias=False,
                     use_tf=False,
                     data_format=BATCH_FIRST,
-                    first_nneg=False,
+                    first_nneg=True,
                     num_iters=1,
                     num_calc_u=1,
                     num_calc_v=1,
@@ -132,6 +143,8 @@ def nonlin_semi_nmf(a, u, v,
         When use TensorFlow, it returns operation u and v solved.
         When use NumPy, it returns results of u and v.
     """
+    assert _check_shape(a, u, v, use_bias)
+    
     if use_bias:
         from .np_biased_nmf import nonlin_semi_nmf as nonlin_semi_nmf_
         _nonlin_semi_nmf = functools.partial(nonlin_semi_nmf_,

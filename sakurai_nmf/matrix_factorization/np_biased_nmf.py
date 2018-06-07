@@ -195,7 +195,7 @@ def _nonlin_solve(a, b, x, _lambda=1e-2, rcond=1e-14, eps=1e-15, num_iters=1, so
 
 
 def nonlin_semi_nmf(a, u, v, alpha=1e2, beta=1e-2, rcond=1e-14, eps=1e-15, num_iters=1, num_calc_u=1, num_calc_v=1,
-                    first_nneg=True):
+                    first_nneg=True, batch_first=True):
     """Biased Nonlinear Semi-NMF
     Args:
         a: Original non-negative matrix factorized
@@ -206,10 +206,14 @@ def nonlin_semi_nmf(a, u, v, alpha=1e2, beta=1e-2, rcond=1e-14, eps=1e-15, num_i
         rcond: Reciprocal condition number
         eps:
         num_iters: Number of iterations
+        batch_first: like TensorFlow format.
 
     Returns:
 
     """
+    if batch_first:
+        num_calc_u, num_calc_v = num_calc_v, num_calc_u
+    
     for _ in range(num_iters):
         if first_nneg:
             # In batch first, v has negative elements.

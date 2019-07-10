@@ -1,4 +1,4 @@
-"""64bit RNN model"""
+"""not implement yet"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -8,13 +8,18 @@ import agents
 import collections
 import numpy as np
 import tensorflow as tf
-from keras.layers import Dense, Input, SimpleRNN
-from keras.models import Model
-from keras.utils.np_utils import to_categorical
+from tensorflow import keras
 from tensorflow.contrib.rnn import GRUBlockCellV2
 
 from sakurai_nmf.losses import frobenius_norm
 from sakurai_nmf.optimizer import utility
+
+Dense = keras.layers.Dense
+Input = keras.layers.Input
+SimpleRNN = keras.layers.SimpleRNN
+Model = keras.Model
+kutils = keras.utils
+kdatasets = keras.datasets
 
 
 def search(x):
@@ -135,15 +140,15 @@ def build_keras_rnn_mnist(batch_size, use_bias=False, activation=None):
 
 
 def load_mnist(dataset='mnist'):
-    from keras.datasets.mnist import load_data
+    load_data = kdatasets.mnist.load_data
     if dataset == 'fashion':
-        from keras.datasets.fashion_mnist import load_data
+        load_data = kdatasets.fashion_mnist.load_data
     (x_train, y_train), (x_test, y_test) = load_data()
     
     x_train = x_train.astype(np.float64) / 255.
-    y_train = to_categorical(y_train, 10).astype(np.float64)
+    y_train = kutils.to_categorical(y_train, 10).astype(np.float64)
     x_test = x_test.astype(np.float64) / 255.
-    y_test = to_categorical(y_test, 10).astype(np.float64)
+    y_test = kutils.to_categorical(y_test, 10).astype(np.float64)
     return (x_train, y_train), (x_test, y_test)
 
 
@@ -197,9 +202,8 @@ def _keras_rnn():
 
 
 def cell_unit_rnn():
-    import keras
-    from keras.layers import RNN
-    import keras.backend.tensorflow_backend as K
+    RNN = keras.layers.RNN
+    # import keras.backend.tensorflow_backend as K
     
     class MinimalRNNCell(keras.layers.Layer):
         def __init__(self, units, **kwargs):

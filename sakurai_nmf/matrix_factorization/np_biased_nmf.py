@@ -157,6 +157,10 @@ def _nonlin_solve(a, b, x, _lambda=1e-2, rcond=1e-14, eps=1e-15, num_iters=1, so
             su_solve = np.linalg.solve(u_svd.s, u_svd.u.T)
             vsu = u_svd.v @ su_solve
             _x = _eye + _lambda * vsu
+            # TODO: in relu case, cannot solve next code.
+            # print("Error: x's rank = {0}".format(np.linalg.matrix_rank(_x)))
+            if np.linalg.matrix_rank(_x) == 1:
+                print("_x is ", _x)
             x = np.linalg.solve(_x, x)
             x = utility.relu(x)
             bias_x = np.vstack((x, bias.T))
